@@ -1,6 +1,8 @@
 package io.github.emputi.mc.miniaturengine.command.parameter
 
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
+import io.github.emputi.mc.miniaturengine.application.Bootstrapper
+import io.github.emputi.mc.miniaturengine.command.PluginHandler
 import io.github.emputi.mc.miniaturengine.event.EventArguments
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -12,10 +14,26 @@ import java.lang.Exception
 import java.lang.NullPointerException
 import java.util.concurrent.ConcurrentLinkedQueue
 
-open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMethod
+open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMethod, PluginHandler
 {
+    private var enabled : Boolean = true
+    override fun setEnable(active: Boolean) {
+        this.enabled = active
+    }
+
+    override fun setEnable(plugin: Bootstrapper?) {
+        throw NotImplementedError("Please call this#setEnable(Boolean) to enable or disable.")
+    }
+
+    override fun isEnabled(): Boolean {
+        return this.enabled
+    }
+
     override fun getPlugin(): Plugin {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if(this.parameterElement.getHandler() == null) {
+            throw ParameterActionException("The plugin of parameter element is null, it guess the element is not enabled yet.")
+        }
+        return this.parameterElement.getHandler() as Plugin
     }
 
     companion object {
@@ -31,7 +49,14 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
     }
 
     private val parameterElement : ParameterElement
+    override fun getParameterElement() : ParameterElement {
+        return this.parameterElement
+    }
+
     private var isAsync : Boolean = true
+    override fun isAsync(): Boolean {
+        return this.isAsync
+    }
 
     private var isActivated : Boolean = false
     fun isMethodActivated() : Boolean = this.isActivated
@@ -39,6 +64,14 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
     override fun setActivate(active : Boolean) {
         this.isActivated = active
     }
+
+    override fun getPermission(): String?
+    {
+        return this.parameterElement.getPermission().getPermission()
+    }
+
+    ove
+
 
     constructor(pea : ParameterElement, commandName : String, async : Boolean) : super(commandName) {
         this.parameterElement = pea
@@ -63,14 +96,16 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
         }
     }
 
-    private fun parameterMethodExecute(requestsClient : CommandSender, handleInstance : Any?) : Any?
+    protected open fun parameterMethodExecute(requestsClient : CommandSender, handleInstance : Any?) : Any?
     {
         val permission = this.parameterElement.getPermission()
         if(requestsClient is ConsoleCommandSender) {
             Bukkit.getConsoleSender().sendMessage("You tried to execute parameter method, " +
                     "But It maybe not supported on Console. Only debug.")
         }
+
         if(!requestsClient.hasPermission(permission.getPermission())) {
+            // TODO("Need to implement for doing about player has no permission.")
         }
 
         val handleInstanceArgument : EventArguments? = handleInstance as? EventArguments
@@ -80,10 +115,6 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
         val callbackResult = function.proxyExecute(handleInstanceArgument!!)
         if(isAsync) return callbackResult
         return callbackResult.getReturnAwait()
-    }
-
-    override fun getParameterElement() : ParameterElement {
-        return this.parameterElement
     }
 
     override fun equals(other: Any?): Boolean {

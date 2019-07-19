@@ -1,22 +1,50 @@
 package io.github.emputi.mc.miniaturengine.command.parameter
 
+import io.github.emputi.mc.miniaturengine.command.PluginHandler
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
+import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 import io.github.emputi.mc.miniaturengine.configuration.ConfigurationException
 import io.github.emputi.mc.miniaturengine.configuration.command.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
+
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
 
-open class ParameterElement
+open class ParameterElement : PluginHandler
 {
+    private var handler : Bootstrapper? = null
+    fun getHandler() : Bootstrapper? = this.handler
+
+    override fun setEnable(active: Boolean) {
+        if(active) {
+
+        }
+        else {
+
+        }
+
+    }
+
+    override fun setEnable(plugin: Bootstrapper?) {
+        this.handler = plugin
+        this.setEnable(this.handler != null)
+    }
+
+    override fun isEnabled(): Boolean {
+        return this.handler != null
+    }
+
+    private val parameterElementFunc0 : (ParameterElementAction) -> Unit = fun(element : ParameterElementAction) {
+        val field = element::class.java.getDeclaredField("parameterElement")
+        field.isAccessible = true
+        field.set(element, this)
+    }
+
     private var onClickFunction : ParameterElementAction? = null
     fun getAction() : ParameterElementAction? = this.onClickFunction
     fun setAction(pea : ParameterElementAction) {
         this.onClickFunction = pea
-        val parameterElementField = this.onClickFunction!!::class.
-            java.getDeclaredField("parameterElement")
-        parameterElementField.isAccessible = true
-        parameterElementField.set(this.onClickFunction!!, this)
+        this.parameterElementFunc0(this.onClickFunction!!)
     }
 
     private val description : List<String> = ArrayList()
@@ -60,8 +88,7 @@ open class ParameterElement
         this.parameterName = name
         this.permission = permission
         this.onClickFunction = function
-        val parameterElementField = this.onClickFunction!!::class.java.getDeclaredField("parameterElement")
-        parameterElementField.isAccessible = true
+        this.parameterElementFunc0(this.onClickFunction!!)
     }
 
     fun getTextComponent() : TextComponent {
@@ -90,15 +117,14 @@ open class ParameterElement
     }
 
     override fun equals(other: Any?): Boolean {
+        if(other !is ParameterElement) return false
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as ParameterElement
+        if (javaClass != other.javaClass) return false
         if (onClickFunction != other.onClickFunction) return false
         if (description != other.description) return false
         if (permission != other.permission) return false
         if (parameterName != other.parameterName) return false
         if (isOptional != other.isOptional) return false
-
         return true
     }
 

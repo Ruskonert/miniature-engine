@@ -1,6 +1,6 @@
 package io.github.emputi.mc.miniaturengine.command.parameter
 
-import io.github.emputi.mc.miniaturengine.Handle
+import io.github.emputi.mc.miniaturengine.command.Handle
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -62,11 +62,18 @@ class ParameterMethodProxy : Handle
             if(action == null) {
                 println("Internal error, But we made not implementing tis routine yet.")
                 parameterImpl.setActivate(false)
+                continue
             }
 
-            for(pmi in ParameterMethodImpl.getRegistryMethods()) {
-                if(!pmi.isRegistered) { pmi.register(commandMap); knownCommand[pmi.name] = pmi }
-                pmi.setActivate(true)
+            if(!parameterImpl.isRegistered) {
+                parameterImpl.register(commandMap)
+                knownCommand[parameterImpl.name] = parameterImpl
+                parameterImpl.setActivate(true)
+            }
+            else {
+                if(parameterImpl.isEnabled()) {
+
+                }
             }
         }
     }

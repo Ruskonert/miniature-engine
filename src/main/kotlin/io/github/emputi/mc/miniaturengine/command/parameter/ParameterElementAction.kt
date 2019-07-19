@@ -11,9 +11,7 @@ import java.util.*
 typealias ParameterFunction = (EventArguments?) -> Any?
 open class ParameterElementAction
 {
-    constructor() {
-
-    }
+    constructor() {}
 
     constructor(clickAction: (EventArguments?) -> Any?) {
         this.actionableFunction = clickAction
@@ -55,7 +53,7 @@ open class ParameterElementAction
      * @param sender
      * @param args
      */
-    fun proxyExecute(args : EventArguments): PluginCallback<EventArguments, Any?>
+    open fun proxyExecute(args : EventArguments): PluginCallback<EventArguments, Any?>
     {
         if(args.getClicker() is ConsoleCommandSender) {
             throw ParameterActionException("The click event of chat is not supported in console.")
@@ -68,7 +66,7 @@ open class ParameterElementAction
     /**
      *
      */
-    private fun debug(message : String)
+    protected open fun debug(message : String)
     {
         Bukkit.getConsoleSender().sendMessage(message)
     }
