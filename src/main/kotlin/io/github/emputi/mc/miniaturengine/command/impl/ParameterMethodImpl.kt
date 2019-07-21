@@ -1,8 +1,9 @@
-package io.github.emputi.mc.miniaturengine.command.parameter
+package io.github.emputi.mc.miniaturengine.command.impl
 
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
-import io.github.emputi.mc.miniaturengine.command.PluginHandler
+import io.github.emputi.mc.miniaturengine.command.parameter.ParameterActionException
+import io.github.emputi.mc.miniaturengine.command.parameter.ParameterElement
 import io.github.emputi.mc.miniaturengine.event.EventArguments
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -10,34 +11,63 @@ import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.command.PluginIdentifiableCommand
 import org.bukkit.plugin.Plugin
-import java.lang.Exception
-import java.lang.NullPointerException
 import java.util.concurrent.ConcurrentLinkedQueue
 
-open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMethod, PluginHandler
+open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMethod
 {
-    private var enabled : Boolean = true
-    override fun setEnable(active: Boolean) {
-        this.enabled = active
+    private var _handlerLastConnected : Bootstrapper? = null
+    private var handler : Bootstrapper? = null
+    fun getHandler() : Bootstrapper? = this.handler
+
+    override fun setEnable(active: Boolean)
+    {
+        if(active)
+        {
+            if(this.isEnabled()) {
+            }
+            else {
+                if(_handlerLastConnected == null) {
+                    if(this.handler == null)
+                        throw ParameterActionException("Please set bootstrapper if want to enable it.")
+                }
+                else {
+                    this.handler = this._handlerLastConnected
+                    this._handlerLastConnected = null
+                }
+            }
+        }
+        else
+        {
+            if(this.handler != null) {
+                this._handlerLastConnected = this.handler!!
+                this.handler = null
+            }
+            else {
+                Bukkit.getConsoleSender().sendMessage("Already disabled")
+            }
+        }
     }
 
     override fun setEnable(plugin: Bootstrapper?) {
-        throw NotImplementedError("Please call this#setEnable(Boolean) to enable or disable.")
+        this.handler = plugin
+        this.setEnable(this.handler != null)
     }
 
     override fun isEnabled(): Boolean {
-        return this.enabled
+        return this.handler != null
     }
 
     override fun getPlugin(): Plugin {
-        if(this.parameterElement.getHandler() == null) {
+        if(this.getHandler() == null) {
             throw ParameterActionException("The plugin of parameter element is null, it guess the element is not enabled yet.")
         }
-        return this.parameterElement.getHandler() as Plugin
+        return this.getHandler() as Plugin
     }
 
     companion object {
         private val methods0 : ConcurrentLinkedQueue<ParameterMethodImpl> = ConcurrentLinkedQueue()
+        private val unloadedMethods0 : ConcurrentLinkedQueue<ParameterMethodImpl> = ConcurrentLinkedQueue()
+        fun getUnloadedMethods() : ConcurrentLinkedQueue<ParameterMethodImpl> = unloadedMethods0
         fun getRegistryMethods() : ConcurrentLinkedQueue<ParameterMethodImpl> = methods0
         fun queueActivateImpl(pmi : ParameterMethodImpl) { methods0.add(pmi) }
         fun isMedicated(target : ParameterElement) : ParameterMethodImpl? {
@@ -58,24 +88,17 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
         return this.isAsync
     }
 
-    private var isActivated : Boolean = false
-    fun isMethodActivated() : Boolean = this.isActivated
-
-    override fun setActivate(active : Boolean) {
-        this.isActivated = active
-    }
-
     override fun getPermission(): String?
     {
         return this.parameterElement.getPermission().getPermission()
     }
 
-    ove
-
-
+    @Suppress("LeakingThis")
     constructor(pea : ParameterElement, commandName : String, async : Boolean) : super(commandName) {
         this.parameterElement = pea
         this.isAsync = async
+        this.description = "The parameter method for command: ParameterMethod[${pea.getParameterName()}@${this}]"
+        this.permission = this.parameterElement.getPermission().getPermission()
     }
 
     @Volatile private var executeResult : Any? = null
@@ -83,20 +106,23 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
 
     override fun execute(sender: CommandSender, commandLabel: String, args: Array<out String>): Boolean
     {
-        if(!this.isActivated) {
-            throw ParameterActionException("This ParameterMethodImpl is not activated, Please enable for use.")
+        val method0 = fun() : Boolean {
+            if (!this.isEnabled()) {
+                throw ParameterActionException("This ParameterMethodImpl is not activated, Please enable for use.")
+            }
+            return try {
+                this.executeResult = this.parameterMethodExecute(sender, EventArguments(sender, args.asList()))
+                this.executeResult == null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
         }
-        return try {
-            this.executeResult = this.parameterMethodExecute(sender, EventArguments(sender, args.asList()))
-            this.executeResult == null
-        }
-        catch(e : Exception) {
-            e.printStackTrace()
-            false
-        }
+        if(this.isAsync) return method0()
+        else synchronized(this) { return method0() }
     }
 
-    protected open fun parameterMethodExecute(requestsClient : CommandSender, handleInstance : Any?) : Any?
+    protected fun parameterMethodExecute(requestsClient : CommandSender, handleInstance : Any?) : Any?
     {
         val permission = this.parameterElement.getPermission()
         if(requestsClient is ConsoleCommandSender) {
@@ -104,8 +130,10 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
                     "But It maybe not supported on Console. Only debug.")
         }
 
+        // If the client has no permission of this command
         if(!requestsClient.hasPermission(permission.getPermission())) {
-            // TODO("Need to implement for doing about player has no permission.")
+            requestsClient.sendMessage("You have not the permission of this command: ${permission.getPermission()}")
+            return false
         }
 
         val handleInstanceArgument : EventArguments? = handleInstance as? EventArguments
@@ -126,7 +154,6 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
     override fun hashCode(): Int {
         var result = parameterElement.hashCode()
         result = 31 * result + isAsync.hashCode()
-        result = 31 * result + isActivated.hashCode()
         result = 31 * result + (executeResult?.hashCode() ?: 0)
         return result
     }

@@ -11,7 +11,7 @@ import java.util.*
 typealias ParameterFunction = (EventArguments?) -> Any?
 open class ParameterElementAction
 {
-    constructor() {}
+    constructor()
 
     constructor(clickAction: (EventArguments?) -> Any?) {
         this.actionableFunction = clickAction
@@ -44,8 +44,8 @@ open class ParameterElementAction
 
     /**
      * Returns id of function.
-     * @return the function id
-     */
+    * @return the function id
+    */
     fun getFunctionId() : String = this.functionId
 
     /**
@@ -59,7 +59,6 @@ open class ParameterElementAction
             throw ParameterActionException("The click event of chat is not supported in console.")
         }
         val callback = this.execute0(args)
-        this.debug("the event function of parameter was called")
         return callback
     }
 

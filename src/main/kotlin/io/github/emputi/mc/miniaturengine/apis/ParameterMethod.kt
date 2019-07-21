@@ -1,14 +1,13 @@
 package io.github.emputi.mc.miniaturengine.apis
 
+import io.github.emputi.mc.miniaturengine.command.PluginHandler
 import io.github.emputi.mc.miniaturengine.command.parameter.ParameterElement
 
-interface ParameterMethod
+interface ParameterMethod : PluginHandler
 {
-    fun setActivate(active: Boolean)
-
     fun getResult(): Any?
 
     fun getParameterElement(): ParameterElement
 
-   fun isAsync() : Boolean
+    fun isAsync() : Boolean
 }

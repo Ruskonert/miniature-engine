@@ -1,35 +1,23 @@
 package io.github.emputi.mc.miniaturengine.command
 
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
-import io.github.emputi.mc.miniaturengine.policy.Permission
 
-abstract class CommandProcessor
+open class CommandProcessor : Handle, PluginHandler
 {
-    private var plugin : Bootstrapper? = null
-    fun getPlugin() : Bootstrapper? {
-        return this.plugin
-    }
-    fun isEnabled() : Boolean {
-        return this.plugin != null
+    override fun executeTask(handleInstance: Any?): Any? {
+        return null
     }
 
-    fun setEnable(plugin : Bootstrapper) : Boolean {
-        this.plugin = plugin
-        return this.isEnabled()
-    }
-
-    private var commandArguments : CommandArguments? = null
-    fun setCommandArguments(ca : CommandArguments) {
-        this.commandArguments = ca
-    }
-
-    constructor() {
-
-    }
-    constructor(processorId : String, command : String) {
+    override fun setEnable(active: Boolean) {
 
     }
 
-    private val processorId : String = "Application.Processor"
-    private lateinit var permission : Permission
+    override fun setEnable(plugin: Bootstrapper?) {
+
+    }
+
+    override fun isEnabled(): Boolean {
+        return true
+    }
+
 }

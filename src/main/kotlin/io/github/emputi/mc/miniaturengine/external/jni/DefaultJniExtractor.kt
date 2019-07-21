@@ -37,7 +37,7 @@
 
 // Copyright 2006 MX Telecom Ltd
 
-package io.github.emputi.mc.miniaturengine.library
+package io.github.emputi.mc.miniaturengine.external.jni
 
 import java.io.File
 import java.io.IOException
@@ -58,7 +58,8 @@ class DefaultJniExtractor
     /**
      * this is where native dependencies are extracted to (e.g. tmplib/).
      */
-    private val nativeDir: File = getTempDir()
+    private val nativeDir: File =
+        getTempDir()
     init {
 
         // Order of operations is such that we do not error if we are racing with

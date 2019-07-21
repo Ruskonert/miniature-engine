@@ -37,7 +37,7 @@
 
 // Copyright 2006 MX Telecom Ltd
 
-package io.github.emputi.mc.miniaturengine.library
+package io.github.emputi.mc.miniaturengine.external.jni
 
 import java.io.IOException
 
