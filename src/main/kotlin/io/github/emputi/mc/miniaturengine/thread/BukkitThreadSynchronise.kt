@@ -33,7 +33,7 @@ abstract class BukkitThreadSynchronise : PluginHandler, Handle, Listener
     val taskId : Int get() = if(this.task == null) -1 else this.task!!.taskId
 
     // Specifies the plugin to manage the scheduler.
-    var activePlugin: Bootstrapper? = null; private set
+    var activePlugin: Bootstrapper? = null
     fun hasActivePlugin(): Boolean = this.activePlugin != null
 
     override fun setEnable(plugin: Bootstrapper?)

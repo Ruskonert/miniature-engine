@@ -8,6 +8,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class ParameterMethodProxy : BukkitThreadSynchronise()
 {
+    init {
+        this.isSync = false
+    }
     private var isRunnable : Boolean = true
 
     override fun executeTask(handleInstance : Any?) : Any?
@@ -28,9 +31,15 @@ class ParameterMethodProxy : BukkitThreadSynchronise()
         fun reserveDeactivate(impl : ParameterMethodImpl){
             reserveDeactivateMethod0.add(impl)
         }
+
+        fun removeKnownCommand0(impl: ParameterMethodImpl, commandMap: HashMap<String, Command>) {
+            if (commandMap.containsKey(impl.name)) {
+                commandMap.remove(impl.name)
+            }
+        }
     }
 
-    private fun parameterMethodProxy0()
+    fun parameterMethodProxy0()
     {
         val server = Bukkit.getServer()
         val serverClazz = server::class.java
@@ -62,7 +71,7 @@ class ParameterMethodProxy : BukkitThreadSynchronise()
             if(action == null) {
                 Bukkit.getConsoleSender().sendMessage("ParameterMethodImpl[${parameterImpl.name}] is disabled, Because action is null.")
                 this.deactivateMethod0(parameterImpl)
-                this.removeKnownCommand0(parameterImpl, knownCommand)
+                removeKnownCommand0(parameterImpl, knownCommand)
                 continue
             }
 
@@ -77,7 +86,7 @@ class ParameterMethodProxy : BukkitThreadSynchronise()
                 val deactivates = reserveDeactivateMethod0
                 for(impl in deactivates) {
                     this.deactivateMethod0(impl)
-                    this.removeKnownCommand0(impl, knownCommand)
+                    removeKnownCommand0(impl, knownCommand)
                     reserveDeactivateMethod0.remove(impl)
                 }
             }
@@ -90,11 +99,5 @@ class ParameterMethodProxy : BukkitThreadSynchronise()
         target.remove(impl)
         impl.setEnable(false)
         ParameterMethodImpl.getUnloadedMethods().add(impl)
-    }
-
-    private fun removeKnownCommand0(impl : ParameterMethodImpl, commandMap : HashMap<String, Command>) {
-        if(commandMap.containsKey(impl.name)) {
-            commandMap.remove(impl.name)
-        }
     }
 }

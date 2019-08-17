@@ -44,10 +44,7 @@ open class ParameterElement : IString
     private val parameterName : String
     fun getParameterName() : String = this.parameterName
 
-    var isOptional : Boolean = true; private set
-    fun setIsOptional(isOptional : Boolean) {
-        this.isOptional = isOptional
-    }
+    var isOptional : Boolean = true
 
     constructor(name : String)
     {
@@ -63,13 +60,13 @@ open class ParameterElement : IString
 
     fun mediateParameterFunction() : ParameterMethod {
         val medicatedMethodImpl = ParameterMethodImpl.isMedicated(this)
-        return if(medicatedMethodImpl == null) {
+        if(medicatedMethodImpl == null) {
             val pmi = ParameterMethodImpl(this, this.onClickFunction!!.getFunctionId(), true)
             ParameterMethodImpl.queueActivateImpl(pmi)
-            pmi
-        } else {
-            medicatedMethodImpl
+            println(this.onClickFunction!!.getFunctionId())
+            return pmi
         }
+        else return medicatedMethodImpl
     }
 
     constructor(name : String, permission : Permission, function : ParameterElementAction) {

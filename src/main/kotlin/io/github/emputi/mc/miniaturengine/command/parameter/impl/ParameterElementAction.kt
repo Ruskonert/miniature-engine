@@ -11,14 +11,14 @@ import java.util.*
 typealias ParameterFunction = (EventArguments?) -> Any?
 open class ParameterElementAction
 {
-    interface ParameterFunctionInterface {
-        fun getParameterFunction() : ParameterFunction
-    }
+        interface ParameterFunctionInterface {
+            fun getParameterFunction() : ParameterFunction
+        }
 
-    constructor()
+        constructor()
 
-    constructor(clickAction: (EventArguments?) -> Any?) {
-        this.actionableFunction = clickAction
+        constructor(clickAction: (EventArguments?) -> Any?) {
+            this.actionableFunction = clickAction
     }
 
     constructor(parameterFunctionInf : ParameterFunctionInterface) {

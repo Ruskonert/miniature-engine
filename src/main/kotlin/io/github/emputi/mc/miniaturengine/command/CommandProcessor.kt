@@ -1,7 +1,11 @@
 package io.github.emputi.mc.miniaturengine.command
 
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
+import io.github.emputi.mc.miniaturengine.command.impl.CommandProcessorImpl
 import io.github.emputi.mc.miniaturengine.command.parameter.*
+import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
+import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
+import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement
 import io.github.emputi.mc.miniaturengine.policy.Permission
 import org.bukkit.command.CommandSender
@@ -23,12 +27,12 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     fun getDelegate() : Bootstrapper = this.delegate
 
     private val command : String
-    constructor(command : String, delegate : Bootstrapper) : this(command, delegate, null)
-    constructor(command : String,  delegate: Bootstrapper, vararg alias: String?) {
+    constructor(command : String, delegate : Bootstrapper = Bootstrapper.BootstrapperBase!!) : this(command, delegate, null)
+    constructor(command : String, delegate: Bootstrapper = Bootstrapper.BootstrapperBase!!, alias: List<String>? = null) {
         this.command = command
         this.delegate = delegate
         this.permission = Permission("${this.delegate.name}.$command")
-        this.alias = alias.toMutableList()
+        if(alias != null) this.alias.addAll(alias)
     }
 
     private var _previous0 : CommandProcessor? = null
@@ -44,8 +48,8 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     final override fun getParameterName(): String = this.command
     final override fun getValue(): CommandProcessor = this
 
-    protected val alias : MutableList<String?>
-    fun getAliases(): MutableList<String?> = this.alias
+    protected val alias : MutableList<String> = ArrayList()
+    fun getAliases(): MutableList<String> = this.alias
 
     protected var permission : Permission; fun getCommandPermission() : Permission = this.permission
     protected var usingNamedArgument : Boolean = false
@@ -61,30 +65,106 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 throw CommandException("This command does not supported on console.")
             }
         }
-        val matched = this.scarchChildCommand(arguments[0])
-        if(matched != null) return matched.execute(sender, arguments.slice(IntRange(1, arguments.lastIndex)))
-        val commandParameters = this.internalExecuteConfiguration(arguments.toMutableList())
         val args : ArrayList<CommandArgument> = ArrayList()
         val args2 : ArrayList<CommandOptionalArgument> = ArrayList()
-        val args3 : ArrayList<CommandDefaultArgument> = ArrayList()
+        @Suppress("RedundantExplicitType")
+        var args3 : CommandDefaultArgument = CommandDefaultArgument()
+
+        if(arguments.isEmpty()) {
+            if(this.child.isNotEmpty()) {
+                // It needs to output the child commands.
+                throw CommandException("It needs to output the child commands :)")
+            }
+            else {
+                if(argumentConfiguration.size != 0) {
+                    if(this.usingNamedArgument) {
+                        for(ac in argumentConfiguration) {
+                            if(! ac.isOptional) {
+                                sender.sendMessage("the parameter '${ac.getParameterName()}' is required value")
+                                return false
+                            }
+                        }
+                    }
+                    else {
+                        val chkFirstRequirement = argumentConfiguration[0]
+                        if(! chkFirstRequirement.isOptional) {
+                            sender.sendMessage("the parameter '${chkFirstRequirement.getParameterName()}' is required value")
+                            return false
+                        }
+                    }
+                }
+                return this.invoke(sender, args, args2, args3)
+            }
+        }
+
+        val matched = this.scarchChildCommand(arguments[0])
+        if(matched != null) return matched.execute(sender, arguments.slice(IntRange(1, arguments.lastIndex)))
+        val commandParameters = this.internalExecuteConfiguration(sender, arguments.toMutableList())
         if(commandParameters.isNotEmpty()) {
             for (cp in commandParameters) {
                 when (cp) {
                     is CommandArgument -> args.add(cp)
                     is CommandOptionalArgument -> args2.add(cp)
-                    is CommandDefaultArgument -> args3.add(cp)
+                    is CommandDefaultArgument -> args3 = cp
                 }
             }
         }
         return this.invoke(sender, args, args2, args3)
     }
 
-    open fun invoke(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
-                    defaultArgs : List<CommandDefaultArgument>) : Boolean {
+    fun medicateCommand() : CommandProcessorImpl {
+        val medicatedMethodImpl = CommandProcessorImpl.isMedicated(this)
+        if(medicatedMethodImpl == null) {
+            val commandProcessorImpl = CommandProcessorImpl(this.command, this)
+            CommandProcessorImpl.queueActivateImpl(commandProcessorImpl)
+            return commandProcessorImpl
+        }
+        else return medicatedMethodImpl
+    }
+
+    protected open fun invoke(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
+                              defaultArgs : CommandDefaultArgument) : Boolean {
         throw NotImplementedError("stub!")
     }
 
-    private fun internalExecuteConfiguration(arguments : MutableList<String>) : List<ICommandParameter<*>>
+    private fun indicesQuoteOf(sender : CommandSender, current : String, arguments: MutableList<String>) : String {
+        var next = arguments[1]
+        if (current.lastIndex != 1) {
+            val stringToken = Regex("^\".*")
+            if (stringToken.matches(next)) {
+                arguments.remove(current)
+                val stringEndToken = Regex(".*\"$")
+                while (true) {
+                    val target = arguments[1]
+                    if (!Validator.validateIsNotConfigureNaming(target)) {
+                        sender.sendMessage("§cDouble quotes opened, But next is the configure value -> '$next'")
+                        throw CommandParameterException("Double quotes opened, But next is the configure value")
+                    }
+                    next += " $target"
+                    if (stringEndToken.matches(target)) {
+                        arguments.remove(target)
+                        break
+                    }
+                    else {
+                        if (arguments.lastIndex == 2) {
+                            sender.sendMessage("§cStarted with double quotes, but didn't find the quote of end -> '$next'")
+                            throw CommandParameterException("mismatching about end of string \"")
+                        }
+                        arguments.remove(target)
+                    }
+                }
+                next = next.removePrefix("\"")
+                next = next.removeSuffix("\"")
+            } else {
+                arguments.remove(next)
+            }
+        } else {
+            arguments.remove(next)
+        }
+        return next
+    }
+
+    private fun internalExecuteConfiguration(sender: CommandSender, arguments : MutableList<String>) : List<ICommandParameter<*>>
     {
         val defaultArguments = CommandDefaultArgument()
         val processedCommandArguments = ArrayList<ICommandParameter<*>>()
@@ -93,19 +173,26 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 while(arguments.size != 0) {
                     val argument = arguments.first()
                     val isArgumentName = Validator.validateArgumentNaming(argument)
-                    val matchedParameterElement = this.matchArgumentFromName(argument)
-                        ?: throw CommandException("Not found '$argument', are you configured this named parameter element?")
 
                     if(isArgumentName) {
-                        val next = arguments[1]
-                        if(!Validator.validateOptionalNaming(next) and !Validator.validateArgumentNaming(next)) {
-                            processedCommandArguments.add(
-                                CommandArgument(
-                                    matchedParameterElement,
-                                    next
-                                )
-                            )
-                            arguments.remove(next)
+                        var next = ""
+                        val matchedParameterElement = this.matchArgumentFromName(argument)
+                            ?: throw CommandException("Not found '$argument', are you sure configured this named parameter element?")
+                        if(arguments.indexOf(argument) == arguments.lastIndex) {
+                            if(matchedParameterElement.isOptional) {
+                                sender.sendMessage("§eWarning: You entered the argument -> $argument, value is null but is optional. skipping")
+                            }
+                            else {
+                                sender.sendMessage("§cYou entered the argument -> '$argument', but that requires value!")
+                                throw CommandException("$argument -> requires value")
+                            }
+                        }
+                        else {
+                            next = indicesQuoteOf(sender, argument, arguments)
+                        }
+
+                        if(Validator.validateIsNotConfigureNaming(next)) {
+                            processedCommandArguments.add(CommandArgument(matchedParameterElement, next))
                         }
                         else {
                             /*
@@ -123,7 +210,11 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                     }
                     else {
                         val isOptionalName = Validator.validateOptionalNaming(argument)
-                        if(isOptionalName) processedCommandArguments.add(CommandOptionalArgument(argument.substring(2)))
+                        if(isOptionalName) processedCommandArguments.add(
+                            CommandOptionalArgument(
+                                argument.substring(2)
+                            )
+                        )
                         else defaultArguments.addValue(argument)
                         arguments.remove(argument)
                     }
@@ -131,27 +222,40 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
             }
             else {
                 for((index, value) in this.argumentConfiguration.withIndex()) {
-                    if(index >= arguments.lastIndex) {
-                        if(value.isOptional) processedCommandArguments.add(CommandArgument(value, ""))
+                    if(index > arguments.lastIndex) {
+                        if(value.isOptional) processedCommandArguments.add(
+                            CommandArgument(
+                                value,
+                                ""
+                            )
+                        )
                         else {
                             throw CommandParameterException("the parameter element must non-null because of not optional")
                         }
                     }
-                    else processedCommandArguments.add(CommandArgument(value, arguments[index]))
+                    else {
+                        processedCommandArguments.add(
+                            CommandArgument(
+                                value,
+                                indicesQuoteOf(sender, arguments[index], arguments)
+                            )
+
+                        )
+                    }
                 }
             }
-            processedCommandArguments.add(defaultArguments)
         }
         else {
-            for(value in this.argumentConfiguration) {
-                processedCommandArguments.add(CommandArgument(value, ""))
+            for(value in arguments) {
+                defaultArguments.addValue(value)
             }
         }
+        processedCommandArguments.add(defaultArguments)
         return processedCommandArguments
     }
 
     private fun matchArgumentFromName(value : String) : ParameterElement? {
-        val argumentName = value.removeRange(IntRange(0, 1))
+        val argumentName = value.removePrefix("-")
         for(v in argumentConfiguration) {
             if(argumentName == v.getParameterName()) return v
         }
@@ -168,6 +272,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
 
     sealed class Validator {
         companion object {
+            fun validateIsNotConfigureNaming(value : String) : Boolean = !validateOptionalNaming(value) and !validateArgumentNaming(value)
             fun validateArgumentNaming(value : String) : Boolean = value.startsWith("-") and !this.validateOptionalNaming(value)
             fun validateOptionalNaming(value : String) : Boolean = value.startsWith("--")
         }

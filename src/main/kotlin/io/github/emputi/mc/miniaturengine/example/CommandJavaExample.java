@@ -12,7 +12,7 @@ public class CommandJavaExample extends CommandProcessor
     public CommandJavaExample() {
         super("example", Objects.requireNonNull(Bootstrapper.Companion.getBootstrapperBase()));
         ParameterElement parameterElement = new ParameterElement("arg1");
-        parameterElement.setIsOptional(false);
+        parameterElement.setOptional(false);
         parameterElement.setAction(new ParameterElementAction(eventArguments -> {
             eventArguments.getClicker().sendMessage("Hello, This is test for java.");
             return true;

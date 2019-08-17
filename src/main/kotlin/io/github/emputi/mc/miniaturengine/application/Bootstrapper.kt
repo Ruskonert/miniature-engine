@@ -32,8 +32,8 @@ abstract class Bootstrapper : JavaPlugin() {
         if(callbackResult.isTerminated()) {
             Bukkit.getConsoleSender().sendMessage("Something is wrong, Try again.")
         }
-        this.startApplication(this)
         BootstrapperBase = this
+        this.startApplication(this)
         Bukkit.getConsoleSender().sendMessage("${this.name} is loaded successfully!")
     }
 

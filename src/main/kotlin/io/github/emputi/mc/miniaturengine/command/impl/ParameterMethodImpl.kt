@@ -79,19 +79,14 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
     }
 
     private val parameterElement : ParameterElement
-    override fun getParameterElement() : ParameterElement {
-        return this.parameterElement
-    }
+    override fun getParameterElement() : ParameterElement = this.parameterElement
+
 
     private var isAsync : Boolean = true
-    override fun isAsync(): Boolean {
-        return this.isAsync
-    }
+    override fun isAsync(): Boolean = this.isAsync
 
-    override fun getPermission(): String?
-    {
-        return this.parameterElement.getPermission().getSubstantialPermission()
-    }
+    override fun getPermission(): String? = this.parameterElement.getPermission().getSubstantialPermission()
+
 
     @Suppress("LeakingThis")
     constructor(pea : ParameterElement, commandName : String, async : Boolean) : super(commandName) {
