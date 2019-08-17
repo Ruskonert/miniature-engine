@@ -20,6 +20,8 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     }
 
     private val delegate : Bootstrapper
+    fun getDelegate() : Bootstrapper = this.delegate
+
     private val command : String
     constructor(command : String, delegate : Bootstrapper) : this(command, delegate, null)
     constructor(command : String,  delegate: Bootstrapper, vararg alias: String?) {
@@ -42,7 +44,9 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     final override fun getParameterName(): String = this.command
     final override fun getValue(): CommandProcessor = this
 
-    protected val alias : List<String?>
+    protected val alias : MutableList<String?>
+    fun getAliases(): MutableList<String?> = this.alias
+
     protected var permission : Permission; fun getCommandPermission() : Permission = this.permission
     protected var usingNamedArgument : Boolean = false
     protected var executeConsole : Boolean = true
