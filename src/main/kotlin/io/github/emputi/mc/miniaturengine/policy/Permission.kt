@@ -15,16 +15,19 @@ class Permission {
     }
 
     private var basePermission : Permission? = null
+    fun setBasePermission(p : Permission) {
+        this.basePermission = p
+    }
     fun isRoot() : Boolean {
         return this.basePermission == null
     }
 
-    fun getCombinedPermission() : Permission {
-        val string = this.getPermission()
+    fun getSubstantialPermissionBased() : Permission {
+        val string = this.getSubstantialPermission()
         return Permission(string)
     }
 
-    fun getPermission() : String {
+    fun getSubstantialPermission() : String {
         if(this.isRoot()) {
             return this.element
         }
@@ -39,6 +42,6 @@ class Permission {
     }
 
     fun hasPermission(sender : CommandSender) : Boolean {
-        return sender.hasPermission(this.getPermission())
+        return sender.hasPermission(this.getSubstantialPermission())
     }
 }

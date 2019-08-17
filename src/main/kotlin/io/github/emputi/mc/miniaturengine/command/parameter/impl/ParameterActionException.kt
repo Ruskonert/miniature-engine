@@ -1,4 +1,4 @@
-package io.github.emputi.mc.miniaturengine.command.parameter
+package io.github.emputi.mc.miniaturengine.command.parameter.impl
 
 import io.github.emputi.mc.miniaturengine.command.CommandException
 

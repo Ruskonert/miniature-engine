@@ -1,4 +1,4 @@
-package io.github.emputi.mc.miniaturengine.command.parameter
+package io.github.emputi.mc.miniaturengine.command.parameter.impl
 
 import io.github.emputi.mc.miniaturengine.thread.PluginCallback
 import io.github.emputi.mc.miniaturengine.event.EventArguments
@@ -11,10 +11,18 @@ import java.util.*
 typealias ParameterFunction = (EventArguments?) -> Any?
 open class ParameterElementAction
 {
+    interface ParameterFunctionInterface {
+        fun getParameterFunction() : ParameterFunction
+    }
+
     constructor()
 
     constructor(clickAction: (EventArguments?) -> Any?) {
         this.actionableFunction = clickAction
+    }
+
+    constructor(parameterFunctionInf : ParameterFunctionInterface) {
+        this.actionableFunction = parameterFunctionInf.getParameterFunction()
     }
 
     /**

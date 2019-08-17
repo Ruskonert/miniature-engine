@@ -1,5 +1,6 @@
 package io.github.emputi.mc.miniaturengine.application
 
+import io.github.emputi.mc.miniaturengine.configuration.Attribute
 import io.github.emputi.mc.miniaturengine.thread.PluginCallback
 import io.github.emputi.mc.miniaturengine.thread.AwaitFunction
 import io.github.emputi.mc.miniaturengine.thread.Task
@@ -10,16 +11,16 @@ abstract class Bootstrapper : JavaPlugin() {
     companion object {
         var BootstrapperBase : Bootstrapper? = null
     }
-
-    private val hwConfiguration : (handleInstance : Any?) -> Any? = fun(configurationObject : Any?) : Any? {
-        return true
+    private val attribute : Attribute? = null
+    private val _hwConfiguration : (handleInstance : Any?) -> Any? = fun(configurationObject : Any?) : Any? {
+        return null
     }
 
     abstract fun startApplication(handleInstance : Any?)
 
     @AwaitFunction
     open fun onPreLoad(handleInstance : Any?) : Task<Any?, Any?> {
-        return PluginCallback(this, server.scheduler, hwConfiguration, null)
+        return PluginCallback(this, server.scheduler, _hwConfiguration, null)
     }
 
     open fun unloadApplication(handleInstance : Any?) {

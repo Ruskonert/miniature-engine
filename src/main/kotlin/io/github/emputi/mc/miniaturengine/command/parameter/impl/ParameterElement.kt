@@ -1,9 +1,10 @@
-package io.github.emputi.mc.miniaturengine.command.parameter
+package io.github.emputi.mc.miniaturengine.command.parameter.impl
 
 import io.github.emputi.mc.miniaturengine.IString
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
 import io.github.emputi.mc.miniaturengine.command.TextComponentUtil
 import io.github.emputi.mc.miniaturengine.command.impl.ParameterMethodImpl
+import io.github.emputi.mc.miniaturengine.configuration.Attribute
 import io.github.emputi.mc.miniaturengine.configuration.ConfigurationException
 import io.github.emputi.mc.miniaturengine.configuration.command.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
@@ -13,6 +14,7 @@ import net.md_5.bungee.api.chat.TextComponent
 
 open class ParameterElement : IString
 {
+    private val configuration : Attribute = Attribute()
     private val parameterElementFunc0 : (ParameterElementAction) -> Unit = fun(element : ParameterElementAction) {
         val field = element::class.java.getDeclaredField("parameterElement")
         field.isAccessible = true
@@ -31,6 +33,7 @@ open class ParameterElement : IString
     fun setDescription(list : MutableList<String>) {
         this.description = list
     }
+
     fun setDescription(index : Int, string : String) {
         this.description[index] = string
     }
@@ -41,7 +44,7 @@ open class ParameterElement : IString
     private val parameterName : String
     fun getParameterName() : String = this.parameterName
 
-    private var isOptional : Boolean = true
+    var isOptional : Boolean = true; private set
     fun setIsOptional(isOptional : Boolean) {
         this.isOptional = isOptional
     }

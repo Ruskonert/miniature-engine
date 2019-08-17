@@ -1,0 +1,32 @@
+{
+  "Parameter": {
+    "Main": {
+      "Decoration": {
+        "Start": [],
+        "End": []
+      },
+      "Title": "Parameter description of command: {0}"
+    },
+    "Title": "Name: {0}",
+    "Requirement": {
+      "Description": "Requirement: {0}",
+      "Optional": "&aOptional",
+      "Required": "&bRequired"
+    },
+    "Permission": {
+      "Description": "Permission: {0}",
+      "Color": {
+        "Granted": "&a",
+        "Denied": "&4"
+      }
+    },
+    "Clickable": {
+      "ID": "Clickable method ID: [{0}]",
+      "Permission": "Requirement Permission: {0}",
+      "Color": {
+        "Granted": "&a",
+        "Denied": "&4"
+      }
+    }
+  }
+}

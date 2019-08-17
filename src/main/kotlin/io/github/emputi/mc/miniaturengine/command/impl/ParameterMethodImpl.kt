@@ -2,8 +2,8 @@ package io.github.emputi.mc.miniaturengine.command.impl
 
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
-import io.github.emputi.mc.miniaturengine.command.parameter.ParameterActionException
-import io.github.emputi.mc.miniaturengine.command.parameter.ParameterElement
+import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterActionException
+import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement
 import io.github.emputi.mc.miniaturengine.event.EventArguments
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -90,7 +90,7 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
 
     override fun getPermission(): String?
     {
-        return this.parameterElement.getPermission().getPermission()
+        return this.parameterElement.getPermission().getSubstantialPermission()
     }
 
     @Suppress("LeakingThis")
@@ -98,7 +98,7 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
         this.parameterElement = pea
         this.isAsync = async
         this.description = "The parameter method for command: ParameterMethod[${pea.getParameterName()}@${this}]"
-        this.permission = this.parameterElement.getPermission().getPermission()
+        this.permission = this.parameterElement.getPermission().getSubstantialPermission()
     }
 
     @Volatile private var executeResult : Any? = null
@@ -131,8 +131,8 @@ open class ParameterMethodImpl : Command, PluginIdentifiableCommand, ParameterMe
         }
 
         // If the client has no permission of this command
-        if(!requestsClient.hasPermission(permission.getPermission())) {
-            requestsClient.sendMessage("You have not the permission of this command: ${permission.getPermission()}")
+        if(!requestsClient.hasPermission(permission.getSubstantialPermission())) {
+            requestsClient.sendMessage("You have not the permission of this command: ${permission.getSubstantialPermission()}")
             return false
         }
 
