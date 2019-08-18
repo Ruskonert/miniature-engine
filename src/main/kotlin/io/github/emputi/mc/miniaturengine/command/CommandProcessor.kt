@@ -174,12 +174,14 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 while(arguments.size != 0) {
                     val argument = arguments.first()
                     val isArgumentName = Validator.validateArgumentNaming(argument)
-
                     if(isArgumentName) {
-                        var next = ""
+                        var next: String
                         val matchedParameterElement = this.matchArgumentFromName(argument)
                             ?: throw CommandException("Not found '$argument', are you sure configured this named parameter element?")
-                        if(arguments.indexOf(argument) == arguments.lastIndex) {
+                        if(arguments.indexOf(argument) == argument.lastIndex) {
+                            next = argument
+                            arguments.remove(argument)
+                            /*
                             if(matchedParameterElement.isOptional) {
                                 sender.sendMessage("§eWarning: You entered the argument -> $argument, value is null but is optional. skipping")
                             }
@@ -187,9 +189,12 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                                 sender.sendMessage("§cYou entered the argument -> '$argument', but that requires value!")
                                 throw CommandException("$argument -> requires value")
                             }
+                             */
                         }
-                        else
+                        else {
                             next = indicesQuoteOf(sender, arguments.subList(1, arguments.size))
+                            arguments.remove(argument)
+                        }
 
 
                         if(Validator.validateIsNotConfigureNaming(next)) {
@@ -252,6 +257,24 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
             }
         }
         processedCommandArguments.add(defaultArguments)
+        if(usingNamedArgument) {
+            for(ac in argumentConfiguration) {
+                if(! ac.isOptional) {
+
+                }
+            }
+        }
+        if(usingNamedArgument) {
+            val intrinsicsCheckNotMissing = fun() {
+                val result = Validator.validateIsFilledAllRequirement(processedCommandArguments, argumentConfiguration)
+                if (result.isNotEmpty()) {
+                    for (reason in result) {
+                        sender.sendMessage("§cYou missed the requirement argument: [${reason.getParameterName()}]")
+                    }
+                    throw CommandParameterException("Missed value of requirement argument(s)")
+                }
+            };intrinsicsCheckNotMissing()
+        }
         return processedCommandArguments
     }
 
@@ -273,6 +296,21 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
 
     sealed class Validator {
         companion object {
+            fun validateIsFilledAllRequirement(victim : Iterable<ICommandParameter<*>>, focus : MutableList<ParameterElement>) : Collection<ParameterElement> {
+                val configuredElement : ArrayList<ParameterElement> = ArrayList()
+                val specificFocus = focus.filterNot { it.isOptional }.toMutableList()
+                val specificVictim = victim.filterIsInstance(CommandArgument::class.java)
+                specificFocus.forEach {
+                    for(value in specificVictim) {
+                        if(it == value.getArgument().first) {
+                            configuredElement.add(it)
+                            break
+                        }
+                    }
+                }
+                specificFocus.removeAll(configuredElement)
+                return specificFocus
+            }
             fun validateIsNotConfigureNaming(value : String) : Boolean = !validateOptionalNaming(value) and !validateArgumentNaming(value)
             fun validateArgumentNaming(value : String) : Boolean = value.startsWith("-") and !this.validateOptionalNaming(value)
             fun validateOptionalNaming(value : String) : Boolean = value.startsWith("--")
