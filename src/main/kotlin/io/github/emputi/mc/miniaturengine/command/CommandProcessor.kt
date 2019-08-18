@@ -131,6 +131,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     private fun indicesQuoteOf(sender : CommandSender, arguments: MutableList<String>) : String {
         var next = ""
         val stringToken = Regex("^\".*")
+        if(arguments.isEmpty()) return next
         if(stringToken.matches(arguments[0])) {
             val stringEndToken = Regex(".*\"$")
             while (true) {
@@ -210,14 +211,13 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                              /command -arg1 -arg2 "hello world" // where is value of "arg1"?? arg1 is not optional argument.
                              */
                             // Warning: the matched value of this argument is null.
-                            sender.sendMessage("&eWarning: &fthe matched value of this argument is null.")
+                            sender.sendMessage("§eWarning: §fthe matched value of this argument is null.")
                             processedCommandArguments.add(
                                 CommandArgument(
                                     matchedParameterElement, ""
                                 )
                             )
                         }
-                        arguments.remove(argument)
                     }
                     else {
                         val isOptionalName = Validator.validateOptionalNaming(argument)
@@ -232,25 +232,16 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 }
             }
             else {
+                val argumentLastIndex = arguments.lastIndex
                 for((index, value) in this.argumentConfiguration.withIndex()) {
-                    if(index > arguments.lastIndex) {
-                        if(value.isOptional) processedCommandArguments.add(
-                            CommandArgument(
-                                value,
-                                ""
-                            )
-                        )
+                    if(index > argumentLastIndex) {
+                        if(value.isOptional) processedCommandArguments.add(CommandArgument(value, ""))
                         else {
                             throw CommandParameterException("the parameter element must non-null because of not optional")
                         }
                     }
                     else {
-                        processedCommandArguments.add(
-                            CommandArgument(
-                                value,
-                                indicesQuoteOf(sender, arguments)
-                            )
-                        )
+                        processedCommandArguments.add(CommandArgument(value, indicesQuoteOf(sender, arguments)))
                     }
                 }
             }
