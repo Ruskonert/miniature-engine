@@ -8,6 +8,7 @@ import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefa
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement
 import io.github.emputi.mc.miniaturengine.policy.Permission
+import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 
@@ -127,45 +128,44 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
         throw NotImplementedError("stub!")
     }
 
-    private fun indicesQuoteOf(sender : CommandSender, current : String, arguments: MutableList<String>) : String {
-        var next = arguments[1]
-        if (current.lastIndex != 1) {
-            val stringToken = Regex("^\".*")
-            if (stringToken.matches(next)) {
-                arguments.remove(current)
-                val stringEndToken = Regex(".*\"$")
-                while (true) {
-                    val target = arguments[1]
-                    if (!Validator.validateIsNotConfigureNaming(target)) {
-                        sender.sendMessage("§cDouble quotes opened, But next is the configure value -> '$next'")
-                        throw CommandParameterException("Double quotes opened, But next is the configure value")
-                    }
-                    next += " $target"
-                    if (stringEndToken.matches(target)) {
-                        arguments.remove(target)
-                        break
-                    }
-                    else {
-                        if (arguments.lastIndex == 2) {
-                            sender.sendMessage("§cStarted with double quotes, but didn't find the quote of end -> '$next'")
-                            throw CommandParameterException("mismatching about end of string \"")
-                        }
-                        arguments.remove(target)
-                    }
+    private fun indicesQuoteOf(sender : CommandSender, arguments: MutableList<String>) : String {
+        var next = ""
+        val stringToken = Regex("^\".*")
+        if(stringToken.matches(arguments[0])) {
+            val stringEndToken = Regex(".*\"$")
+            while (true) {
+                val target = arguments[0]
+                if (!Validator.validateIsNotConfigureNaming(target)) {
+                    sender.sendMessage("§cDouble quotes opened, But next is the configure value -> '$next'")
+                    throw CommandParameterException("Double quotes opened, But next is the configure value")
                 }
-                next = next.removePrefix("\"")
-                next = next.removeSuffix("\"")
-            } else {
-                arguments.remove(next)
+                next += " $target"
+                if (stringEndToken.matches(target)) {
+                    arguments.remove(target)
+                    break
+                }
+                else {
+                    if (arguments.lastIndex == arguments.indexOf(target)) {
+                        sender.sendMessage("§cStarted with double quotes, but didn't find the quote of end -> '$next'")
+                        throw CommandParameterException("mismatching about end of string \"")
+                    }
+                    arguments.remove(target)
+                }
             }
-        } else {
-            arguments.remove(next)
+            next = next.substring(2, next.lastIndex)
+            return next
         }
-        return next
+        else {
+            next = arguments[0]
+            arguments.removeAt(0)
+            return next
+        }
     }
 
     private fun internalExecuteConfiguration(sender: CommandSender, arguments : MutableList<String>) : List<ICommandParameter<*>>
     {
+        var entireString = ""; arguments.forEach { entireString += " $it" }
+        Bukkit.getConsoleSender().sendMessage("§f${sender.name} command §aexecuted: §f[${this.command}$entireString]")
         val defaultArguments = CommandDefaultArgument()
         val processedCommandArguments = ArrayList<ICommandParameter<*>>()
         if(argumentConfiguration.isNotEmpty()) {
@@ -187,12 +187,22 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                                 throw CommandException("$argument -> requires value")
                             }
                         }
-                        else {
-                            next = indicesQuoteOf(sender, argument, arguments)
-                        }
+                        else
+                            next = indicesQuoteOf(sender, arguments.subList(1, arguments.size))
+
 
                         if(Validator.validateIsNotConfigureNaming(next)) {
-                            processedCommandArguments.add(CommandArgument(matchedParameterElement, next))
+                            val element = CommandArgument(matchedParameterElement, next)
+                            for(pca in processedCommandArguments) {
+                                if(pca is CommandArgument) {
+                                    if(pca.getArgument().first == matchedParameterElement) {
+                                        sender.sendMessage("§eWarning: Ignored previous value caused of duplicate argument name: §f[${matchedParameterElement.getParameterName()}]")
+                                        processedCommandArguments.remove(pca)
+                                        break
+                                    }
+                                }
+                            }
+                            processedCommandArguments.add(element)
                         }
                         else {
                             /*
@@ -200,6 +210,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                              /command -arg1 -arg2 "hello world" // where is value of "arg1"?? arg1 is not optional argument.
                              */
                             // Warning: the matched value of this argument is null.
+                            sender.sendMessage("&eWarning: &fthe matched value of this argument is null.")
                             processedCommandArguments.add(
                                 CommandArgument(
                                     matchedParameterElement, ""
@@ -237,9 +248,8 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                         processedCommandArguments.add(
                             CommandArgument(
                                 value,
-                                indicesQuoteOf(sender, arguments[index], arguments)
+                                indicesQuoteOf(sender, arguments)
                             )
-
                         )
                     }
                 }
