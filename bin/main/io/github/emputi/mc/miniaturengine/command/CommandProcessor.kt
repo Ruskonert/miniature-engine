@@ -41,13 +41,9 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     protected fun addChild(command : CommandProcessor) {
         val command0 = command
         command0._previous0 = this
-        this.setPermissionForChild(command0)
-        this.child.add(command0)
-    }
-
-    private fun setPermissionForChild(command0 : CommandProcessor) {
         val permission = command0.permission
         permission.setBasePermission(this.permission)
+        this.child.add(command0)
     }
 
     final override fun getParameterName(): String = this.command
@@ -56,17 +52,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
     protected val alias : MutableList<String> = ArrayList()
     fun getAliases(): MutableList<String> = this.alias
 
-    protected var permission : Permission
-    set(value) {
-        field = value
-        if(this.child.isNotEmpty()) {
-            for(ch in this.child) {
-                ch.permission.setBasePermission(field)
-            }
-        }
-    }
-
-
+    protected var permission : Permission; fun getCommandPermission() : Permission = this.permission
     protected var usingNamedArgument : Boolean = false
     protected var executeConsole : Boolean = true
     fun execute(sender: CommandSender, arguments: List<String>) : Boolean
@@ -108,11 +94,11 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                         }
                     }
                 }
-                return this.invoke0(sender, args, args2, args3)
+                return this.invoke(sender, args, args2, args3)
             }
         }
 
-        val matched = this.searchChildCommand(arguments[0])
+        val matched = this.scarchChildCommand(arguments[0])
         if(matched != null) return matched.execute(sender, arguments.slice(IntRange(1, arguments.lastIndex)))
         val commandParameters = this.internalExecuteConfiguration(sender, arguments.toMutableList())
         if(commandParameters.isNotEmpty()) {
@@ -124,10 +110,9 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 }
             }
         }
-        return this.invoke0(sender, args, args2, args3)
+        return this.invoke(sender, args, args2, args3)
     }
 
-    @Suppress("LiftReturnOrAssignment")
     fun medicateCommand() : CommandProcessorImpl {
         val medicatedMethodImpl = CommandProcessorImpl.isMedicated(this)
         if(medicatedMethodImpl == null) {
@@ -136,19 +121,6 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
             return commandProcessorImpl
         }
         else return medicatedMethodImpl
-    }
-
-    private fun invoke0(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
-                              defaultArgs : CommandDefaultArgument) : Boolean {
-        val mode : String = if(this.usingNamedArgument) "Named" else "Numeric"
-        Bukkit.getConsoleSender().sendMessage("§a===================================")
-        Bukkit.getConsoleSender().sendMessage("§aReferenced by: §d${this::class.java.name}")
-        Bukkit.getConsoleSender().sendMessage("§aCommand mode: §e$mode")
-        Bukkit.getConsoleSender().sendMessage("§a[The arguments information]")
-        for(argument in args)
-            Bukkit.getConsoleSender().sendMessage("§f[${argument.getParameterName()}] §e-> §9${argument.getArgument().second}")
-        Bukkit.getConsoleSender().sendMessage("§a===================================")
-        return this.invoke(sender, args, optionalArgs, defaultArgs)
     }
 
     protected open fun invoke(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
@@ -193,10 +165,10 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
 
     private fun internalExecuteConfiguration(sender: CommandSender, arguments : MutableList<String>) : List<ICommandParameter<*>>
     {
-        val defaultArguments = CommandDefaultArgument()
-        val processedCommandArguments = ArrayList<ICommandParameter<*>>()
         var entireString = ""; arguments.forEach { entireString += " $it" }
         Bukkit.getConsoleSender().sendMessage("§f${sender.name} command §aexecuted: §f[${this.command}$entireString]")
+        val defaultArguments = CommandDefaultArgument()
+        val processedCommandArguments = ArrayList<ICommandParameter<*>>()
         if(argumentConfiguration.isNotEmpty()) {
             if(this.usingNamedArgument) {
                 while(arguments.size != 0) {
@@ -284,6 +256,14 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 defaultArguments.addValue(value)
             }
         }
+        processedCommandArguments.add(defaultArguments)
+        if(usingNamedArgument) {
+            for(ac in argumentConfiguration) {
+                if(! ac.isOptional) {
+
+                }
+            }
+        }
         if(usingNamedArgument) {
             val intrinsicsCheckNotMissing = fun() {
                 val result = Validator.validateIsFilledAllRequirement(processedCommandArguments, argumentConfiguration)
@@ -295,7 +275,6 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 }
             };intrinsicsCheckNotMissing()
         }
-        processedCommandArguments.add(defaultArguments)
         return processedCommandArguments
     }
 
@@ -307,7 +286,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
         return null
     }
 
-    private fun searchChildCommand(value : String) : CommandProcessor? {
+    private fun scarchChildCommand(value : String) : CommandProcessor? {
         if(this.child.isEmpty()) return null
         for(child in this.child) {
             if(child.command == value || child.alias.contains(value)) return child

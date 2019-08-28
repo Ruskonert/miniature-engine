@@ -4,23 +4,31 @@ import io.github.emputi.mc.miniaturengine.command.CommandProcessor
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
-import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement.Companion.CreateDelicatedParameterElement
+import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement
 import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElementAction
+import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterFunction
+import io.github.emputi.mc.miniaturengine.event.EventArguments
 import org.bukkit.command.CommandSender
 
 class CommandExample : CommandProcessor("example")
 {
-    init {
-        val parameterClickAction = ParameterElementAction { args ->
-            if (args == null) throw NullPointerException("Nop! arguments is null")
-            args.getClicker().sendMessage("Hello ${args.getClicker().name}! You clicked parameter string of argument 'one'.")
-            true
-        }
+    private val clickAction : ParameterFunction = fun(args : EventArguments?) : Any? {
+        if (args == null) throw NullPointerException("Nop! arguments is null")
+        args.getClicker().sendMessage("Hello player! You clicked arg1 parameter string.")
+        return true
+    }
 
-        val parameterElement = CreateDelicatedParameterElement("message", action = parameterClickAction)
+    init {
+
+        val parameterElement = ParameterElement("message")
+        parameterElement.isOptional = false
+        val parameterClickAction = ParameterElementAction(clickAction)
+        parameterElement.setAction(parameterClickAction)
         this.addParameterOfArgument(parameterElement)
         this.usingNamedArgument = true
         this.medicateCommand()
+
+        parameterElement.mediateParameterFunction()
     }
 
     override fun invoke(

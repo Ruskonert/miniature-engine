@@ -14,22 +14,6 @@ import net.md_5.bungee.api.chat.TextComponent
 
 open class ParameterElement : IString
 {
-    companion object {
-        @JvmStatic
-        fun CreateDelicatedParameterElement(
-            name : String,
-            permission: Permission? = null,
-            action : ParameterElementAction? = null,
-            isOption: Boolean = false
-        ) : ParameterElement {
-            val element = ParameterElement(name)
-            if(permission != null) element.permission = permission
-            if(action != null) element.onClickFunction = action
-            element.isOptional = isOption
-            element.mediateParameterFunction()
-            return element
-        }
-    }
     private val configuration : Attribute = Attribute()
     private val parameterElementFunc0 : (ParameterElementAction) -> Unit = fun(element : ParameterElementAction) {
         val field = element::class.java.getDeclaredField("parameterElement")

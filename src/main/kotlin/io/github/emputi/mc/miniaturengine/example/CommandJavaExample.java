@@ -9,16 +9,16 @@ import java.util.Objects;
 
 public class CommandJavaExample extends CommandProcessor
 {
-    public CommandJavaExample() {
+    public CommandJavaExample()
+    {
         super("example", Objects.requireNonNull(Bootstrapper.Companion.getBootstrapperBase()));
-        ParameterElement parameterElement = new ParameterElement("arg1");
-        parameterElement.setOptional(false);
-        parameterElement.setAction(new ParameterElementAction(eventArguments -> {
-            eventArguments.getClicker().sendMessage("Hello, This is test for java.");
-            return true;
-        }));
-        parameterElement.mediateParameterFunction();
-        //noinspection ConstantConditions
-        Bukkit.getConsoleSender().sendMessage(parameterElement.getAction().getFunctionId());
+        ParameterElement parameter = ParameterElement.CreateDelicatedParameterElement("arg1", null,
+                new ParameterElementAction(eventArguments -> {
+                    eventArguments.getClicker().sendMessage("Hello, This is test for java.");
+                    return true; })
+                , false);
+        this.addParameterOfArgument(parameter);
+
+        Bukkit.getConsoleSender().sendMessage(Objects.requireNonNull(parameter.getAction()).getFunctionId());
     }
 }
