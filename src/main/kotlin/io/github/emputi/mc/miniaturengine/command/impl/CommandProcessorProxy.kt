@@ -6,7 +6,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.SimpleCommandMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class CommandProcessorProxy : BukkitThreadSynchronise()
+open class CommandProcessorProxy : BukkitThreadSynchronise()
 {
     init {
         this.isSync = false

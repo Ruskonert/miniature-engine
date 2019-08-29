@@ -9,5 +9,5 @@ interface ParameterMethod : PluginHandler
 
     fun getParameterElement(): ParameterElement
 
-    fun isAsync() : Boolean
+fun isAsync() : Boolean
 }

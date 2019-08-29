@@ -5,7 +5,7 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class CommandProcessorImpl(private val commandName: String, private val commandBase: CommandProcessor) : Command(
+open class CommandProcessorImpl(private val commandName: String, private val commandBase: CommandProcessor) : Command(
     commandName,
     "This command was registered by miniature-engine",
     "",

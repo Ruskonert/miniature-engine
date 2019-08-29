@@ -16,7 +16,6 @@ class CommandExample2 : CommandProcessor("example2")
 
         val parameterElement2 = ParameterElement("SecondArgument")
         this.addParameterOfArgument(parameterElement2)
-        this.medicateCommand()
     }
 
     override fun invoke(

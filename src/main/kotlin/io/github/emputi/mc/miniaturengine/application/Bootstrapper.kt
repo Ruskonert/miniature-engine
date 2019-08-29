@@ -24,7 +24,6 @@ abstract class Bootstrapper : JavaPlugin() {
     }
 
     open fun unloadApplication(handleInstance : Any?) {
-
     }
 
     final override fun onEnable() {

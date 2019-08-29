@@ -20,7 +20,6 @@ class CommandExample : CommandProcessor("example")
         val parameterElement = CreateDelicatedParameterElement("message", action = parameterClickAction)
         this.addParameterOfArgument(parameterElement)
         this.usingNamedArgument = true
-        this.medicateCommand()
     }
 
     override fun invoke(

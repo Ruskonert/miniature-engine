@@ -2,7 +2,8 @@ package io.github.emputi.mc.miniaturengine.command
 
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 import io.github.emputi.mc.miniaturengine.command.impl.CommandProcessorImpl
-import io.github.emputi.mc.miniaturengine.command.parameter.*
+import io.github.emputi.mc.miniaturengine.command.parameter.CommandParameterException
+import io.github.emputi.mc.miniaturengine.command.parameter.ICommandParameter
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
@@ -145,8 +146,13 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
         Bukkit.getConsoleSender().sendMessage("§aReferenced by: §d${this::class.java.name}")
         Bukkit.getConsoleSender().sendMessage("§aCommand mode: §e$mode")
         Bukkit.getConsoleSender().sendMessage("§a[The arguments information]")
-        for(argument in args)
-            Bukkit.getConsoleSender().sendMessage("§f[${argument.getParameterName()}] §e-> §9${argument.getArgument().second}")
+        if(args.isNotEmpty()) {
+            for(argument in args)
+                Bukkit.getConsoleSender().sendMessage("§f[${argument.getParameterName()}] §e-> §9${argument.getArgument().second}")
+        }
+        else {
+            Bukkit.getConsoleSender().sendMessage("§fNo provided about argument information!")
+        }
         Bukkit.getConsoleSender().sendMessage("§a===================================")
         return this.invoke(sender, args, optionalArgs, defaultArgs)
     }
@@ -331,7 +337,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                 }
                 specificFocus.removeAll(configuredElement)
                 return specificFocus
-            }
+        }
             fun validateIsNotConfigureNaming(value : String) : Boolean = !validateOptionalNaming(value) and !validateArgumentNaming(value)
             fun validateArgumentNaming(value : String) : Boolean = value.startsWith("-") and !this.validateOptionalNaming(value)
             fun validateOptionalNaming(value : String) : Boolean = value.startsWith("--")
