@@ -1,5 +1,6 @@
 package io.github.emputi.mc.miniaturengine.command
 
+import io.github.emputi.mc.miniaturengine.PluginHandler
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 import io.github.emputi.mc.miniaturengine.command.impl.CommandProcessorImpl
 import io.github.emputi.mc.miniaturengine.command.parameter.CommandParameterException
@@ -7,14 +8,29 @@ import io.github.emputi.mc.miniaturengine.command.parameter.ICommandParameter
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
+import io.github.emputi.mc.miniaturengine.command.parameter.argument.util.ArgumentDisplayElement
 import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement
+import io.github.emputi.mc.miniaturengine.communication.SerializableEntity
+import io.github.emputi.mc.miniaturengine.configuration.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 
-abstract class CommandProcessor : ICommandParameter<CommandProcessor>
+abstract class CommandProcessor : SerializableEntity, ICommandParameter<CommandProcessor>, PluginHandler, CommandProcessorDelegate
 {
+    override fun isEnabled(): Boolean {
+        return true
+    }
+
+    override fun setEnable(active: Boolean) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun setEnable(plugin: Bootstrapper?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     private val argumentConfiguration : ArrayList<ParameterElement> = ArrayList()
     fun addParameterOfArgument(parameterElement: ParameterElement) {
         parameterElement.getPermission().setBasePermission(this.permission)
@@ -25,10 +41,12 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
         this.argumentConfiguration[index] = parameterElement
     }
 
-    private val delegate : Bootstrapper
+    private var delegate : Bootstrapper
     fun getDelegate() : Bootstrapper = this.delegate
 
     private val command : String
+    fun getCommandName() : String = this.command
+
     constructor(command : String, delegate : Bootstrapper = Bootstrapper.BootstrapperBase!!) : this(command, delegate, null)
     constructor(command : String, delegate: Bootstrapper = Bootstrapper.BootstrapperBase!!, alias: List<String>? = null) {
         this.command = command
@@ -37,13 +55,35 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
         if(alias != null) this.alias.addAll(alias)
     }
 
+
     private var _previous0 : CommandProcessor? = null
+    override fun getDelegateCommand(): CommandProcessor? {
+        return this._previous0
+    }
+
     private val child : MutableList<CommandProcessor> = ArrayList()
+    fun getChild() : List<CommandProcessor> = this.child
     protected fun addChild(command : CommandProcessor) {
         val command0 = command
         command0._previous0 = this
         this.setPermissionForChild(command0)
         this.child.add(command0)
+    }
+
+    @Synchronized
+    protected fun invokeChildCommand(
+        commandId : String,
+        sender : CommandSender,
+        commandArgument: List<CommandArgument>,
+        commandOptionalArgument: List<CommandOptionalArgument>,
+        commandDefaultArgument: CommandDefaultArgument
+    ) : Boolean {
+        for(c in this.child) {
+            if(c.command == commandId) {
+                return c.invoke(sender, commandArgument, commandOptionalArgument, commandDefaultArgument)
+            }
+        }
+        return false
     }
 
     private fun setPermissionForChild(command0 : CommandProcessor) {
@@ -66,6 +106,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
             }
         }
     }
+    fun getCommandPermission() : Permission = this.permission
 
 
     protected var usingNamedArgument : Boolean = false
@@ -154,15 +195,61 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
             Bukkit.getConsoleSender().sendMessage("§fNo provided about argument information!")
         }
         Bukkit.getConsoleSender().sendMessage("§a===================================")
+
+        var strPermission = this.permission.getSubstantialPermission()
+
+        if(this._previous0 == null) {
+            if(! strPermission.contains(".")) {
+                strPermission += ".help"
+            }
+        }
+
+        if(!sender.hasPermission(strPermission)) {
+            sender.sendMessage("§4You have not permission of this command: ${this.permission.getSubstantialPermission()}")
+            return false
+        }
+
         return this.invoke(sender, args, optionalArgs, defaultArgs)
     }
 
     protected open fun invoke(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
-                              defaultArgs : CommandDefaultArgument) : Boolean {
-        throw NotImplementedError("stub!")
+                              defaultArgs : CommandDefaultArgument) : Boolean { return true }
+
+    protected open fun invokeUnknown(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
+                              defaultArgs : CommandDefaultArgument) : Boolean { return true }
+
+    protected open fun invokeWithoutArgument(sender : CommandSender) : Boolean { return true }
+
+    protected open fun invokeInvalidArgument(sender : CommandSender, args: List<CommandArgument>, optionalArgs: List<CommandOptionalArgument>,
+                                             defaultArgs : CommandDefaultArgument, causeOf : CommandParameterException) : Boolean { return true }
+
+    companion object {
+        /**
+         * Examine the arguments of a command and replace it with an element that can be displayed on the screen.
+         * @param command
+         * @param observer
+         * @return
+         */
+        fun investigateCommandArguments(
+            command: CommandProcessor,
+            observer: CommandSender = Bukkit.getConsoleSender()
+        ): List<ArgumentDisplayElement> {
+            val list = ArrayList<ArgumentDisplayElement>()
+            val inst = ParameterConfiguration.configurationInst()
+
+            if (command.argumentConfiguration.isNotEmpty()) {
+                // It configures string format following like this:
+                // /command <requirement's name> [arg1's name] [arg2's name]
+                for (argument in command.argumentConfiguration) {
+                    val displayElement = ArgumentDisplayElement.create(inst, argument, observer)
+                    list.add(displayElement)
+                }
+            }
+            return list
+        }
     }
 
-    private fun indicesQuoteOf(sender : CommandSender, arguments: MutableList<String>) : String {
+    private fun interpretStringDelimiter(sender : CommandSender, arguments: MutableList<String>) : String {
         var next = ""
         val stringToken = Regex("^\".*")
         if(arguments.isEmpty()) return next
@@ -226,7 +313,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                              */
                         }
                         else {
-                            next = indicesQuoteOf(sender, arguments.subList(1, arguments.size))
+                            next = interpretStringDelimiter(sender, arguments.subList(1, arguments.size))
                             arguments.remove(argument)
                         }
 
@@ -280,7 +367,7 @@ abstract class CommandProcessor : ICommandParameter<CommandProcessor>
                         }
                     }
                     else {
-                        processedCommandArguments.add(CommandArgument(value, indicesQuoteOf(sender, arguments)))
+                        processedCommandArguments.add(CommandArgument(value, interpretStringDelimiter(sender, arguments)))
                     }
                 }
             }

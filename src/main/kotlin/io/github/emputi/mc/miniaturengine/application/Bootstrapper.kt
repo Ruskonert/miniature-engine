@@ -39,4 +39,8 @@ abstract class Bootstrapper : JavaPlugin() {
     final override fun onDisable() {
 
     }
+
+    open fun reload() : Boolean {
+        return true
+    }
 }

@@ -1,4 +1,4 @@
-package io.github.emputi.mc.miniaturengine.command
+package io.github.emputi.mc.miniaturengine
 
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 

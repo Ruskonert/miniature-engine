@@ -4,7 +4,7 @@ import io.github.emputi.mc.miniaturengine.command.CommandProcessor
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
-import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement.Companion.CreateDelicatedParameterElement
+import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElement.Companion.createDelicateParameterElement
 import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElementAction
 import org.bukkit.command.CommandSender
 
@@ -17,7 +17,7 @@ class CommandExample : CommandProcessor("example")
             true
         }
 
-        val parameterElement = CreateDelicatedParameterElement("message", action = parameterClickAction)
+        val parameterElement = createDelicateParameterElement("message", action = parameterClickAction)
         this.addParameterOfArgument(parameterElement)
         this.usingNamedArgument = true
     }

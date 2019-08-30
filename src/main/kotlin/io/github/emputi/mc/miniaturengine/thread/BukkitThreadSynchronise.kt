@@ -3,7 +3,7 @@ package io.github.emputi.mc.miniaturengine.thread
 import com.google.common.collect.ArrayListMultimap
 import io.github.emputi.mc.miniaturengine.application.Bootstrapper
 import io.github.emputi.mc.miniaturengine.command.Handle
-import io.github.emputi.mc.miniaturengine.command.PluginHandler
+import io.github.emputi.mc.miniaturengine.PluginHandler
 import org.bukkit.Bukkit
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener

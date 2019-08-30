@@ -66,6 +66,7 @@ open class ParameterElementAction
         if(args.getClicker() is ConsoleCommandSender) {
             throw ParameterActionException("The click event of chat is not supported in console.")
         }
+
         val callback = this.execute0(args)
         return callback
     }

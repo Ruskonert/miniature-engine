@@ -1,4 +1,4 @@
-package io.github.emputi.mc.miniaturengine.configuration.command
+package io.github.emputi.mc.miniaturengine.configuration
 
 class ParameterConfiguration
 {
@@ -9,9 +9,10 @@ class ParameterConfiguration
         }
     }
     init {
-        CONFIGURATION = ParameterConfiguration()
-        CONFIGURATION.conf["Parameter.Format.Optional"] = "&e[$0]"
-        CONFIGURATION.conf["Parameter.Format.Requirement"] = "&e<$0>"
+        CONFIGURATION =
+            ParameterConfiguration()
+        CONFIGURATION.conf["Parameter.Format.Optional"] = "&e[{0}]"
+        CONFIGURATION.conf["Parameter.Format.Requirement"] = "&e<{0}>"
     }
     val conf : HashMap<String, String> = HashMap()
     fun getAttribute(attributeName : String) : String? {

@@ -1,22 +1,26 @@
 package io.github.emputi.mc.miniaturengine.command.parameter.impl
 
-import io.github.emputi.mc.miniaturengine.IString
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
 import io.github.emputi.mc.miniaturengine.command.TextComponentUtil
 import io.github.emputi.mc.miniaturengine.command.impl.ParameterMethodImpl
-import io.github.emputi.mc.miniaturengine.configuration.Attribute
-import io.github.emputi.mc.miniaturengine.configuration.ConfigurationException
-import io.github.emputi.mc.miniaturengine.configuration.command.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 
-open class ParameterElement : IString
+open class ParameterElement
 {
     companion object {
         @JvmStatic
-        fun CreateDelicatedParameterElement(
+        fun createDefault(basePermission : Permission? = null) : ParameterElement {
+            val element =  if(basePermission != null) ParameterElement("args", Permission("help", basePermission))
+            else ParameterElement("args", Permission("help"))
+            element.isOptional = true
+            return element
+        }
+
+        @JvmStatic
+        fun createDelicateParameterElement(
             name : String,
             permission: Permission? = null,
             action : ParameterElementAction? = null,
@@ -30,7 +34,7 @@ open class ParameterElement : IString
             return element
         }
     }
-    private val configuration : Attribute = Attribute()
+
     private val parameterElementFunc0 : (ParameterElementAction) -> Unit = fun(element : ParameterElementAction) {
         val field = element::class.java.getDeclaredField("parameterElement")
         field.isAccessible = true
@@ -90,22 +94,6 @@ open class ParameterElement : IString
         this.permission = permission
         this.onClickFunction = function
         this.parameterElementFunc0(this.onClickFunction!!)
-    }
-
-    override fun getTextComponent() : TextComponent
-    {
-        val configuration = ParameterConfiguration.configurationInst()
-        val paramDisplayFormat = if(this.isOptional) {
-            configuration.getAttribute("Parameter.Format.Optional")
-        }
-        else {
-            configuration.getAttribute("Parameter.Format.Requirement")
-        } ?: throw ConfigurationException("Check the attributes: Parameter.Format.*")
-
-        val stringComponent = TextComponent(paramDisplayFormat.format(this.parameterName))
-        this.applyClickFunction(stringComponent)
-        this.applyHoverFunction(stringComponent)
-        return stringComponent
     }
 
     open fun applyClickFunction(target : TextComponent) {
