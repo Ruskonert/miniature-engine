@@ -3,6 +3,7 @@ package io.github.emputi.mc.miniaturengine.command.parameter.impl
 import io.github.emputi.mc.miniaturengine.apis.ParameterMethod
 import io.github.emputi.mc.miniaturengine.command.TextComponentUtil
 import io.github.emputi.mc.miniaturengine.command.impl.ParameterMethodImpl
+import io.github.emputi.mc.miniaturengine.command.impl.UndefinedParameterMethod
 import io.github.emputi.mc.miniaturengine.policy.Permission
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.HoverEvent
@@ -55,7 +56,9 @@ open class ParameterElement
     }
 
     fun setDescription(index : Int, string : String) {
-        this.description[index] = string
+        if(this.description.lastIndex < index)
+            this.description.add(string)
+        else this.description[index] = string
     }
 
     private var permission : Permission
@@ -78,13 +81,18 @@ open class ParameterElement
         this.permission = permission
     }
 
-    fun mediateParameterFunction() : ParameterMethod {
+    fun mediateParameterFunction() : ParameterMethod
+    {
         val medicatedMethodImpl = ParameterMethodImpl.isMedicated(this)
-        if(medicatedMethodImpl == null) {
-            val pmi = ParameterMethodImpl(this, this.onClickFunction!!.getFunctionId(), true)
-            ParameterMethodImpl.queueActivateImpl(pmi)
-            println(this.onClickFunction!!.getFunctionId())
-            return pmi
+        if(medicatedMethodImpl == null)
+        {
+            if(this.onClickFunction != null)
+            {
+                val pmi = ParameterMethodImpl(this, this.onClickFunction!!.getFunctionId(), true)
+                ParameterMethodImpl.queueActivateImpl(pmi)
+                return pmi
+            }
+            else return UndefinedParameterMethod()
         }
         else return medicatedMethodImpl
     }

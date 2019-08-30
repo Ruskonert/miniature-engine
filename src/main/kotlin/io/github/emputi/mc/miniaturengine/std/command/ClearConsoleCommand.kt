@@ -5,6 +5,7 @@ import io.github.emputi.mc.miniaturengine.command.CommandProcessor
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandDefaultArgument
 import io.github.emputi.mc.miniaturengine.command.parameter.argument.CommandOptionalArgument
+import io.github.emputi.mc.miniaturengine.communication.MfeDataDeliver
 import org.bukkit.command.CommandSender
 
 class ClearConsoleCommand : CommandProcessor("clearscreen")
@@ -15,7 +16,8 @@ class ClearConsoleCommand : CommandProcessor("clearscreen")
         optionalArgs: List<CommandOptionalArgument>,
         defaultArgs: CommandDefaultArgument
     ): Boolean {
-        FrameApplicationManager.Util.clearConsoleWindow()
-        return true
+        //FrameApplicationManager.Util.clearConsoleWindow()
+        val testIsSuccess = MfeDataDeliver.Util.isValidMfeChecksum("Hello world")
+        return testIsSuccess
     }
 }
