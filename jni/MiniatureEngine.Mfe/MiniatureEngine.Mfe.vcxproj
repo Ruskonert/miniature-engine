@@ -171,7 +171,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="miniaturengine_anti.hpp" />
+    <ClInclude Include="miniaturengine_main.hpp" />
     <ClInclude Include="miniaturengine_mfe.hpp" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="MiniatureEngine.Mfe.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
