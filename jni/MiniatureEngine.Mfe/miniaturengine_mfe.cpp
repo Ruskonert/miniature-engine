@@ -18,7 +18,7 @@ static LPFN_ISWOW64PROCESS fnIsWow64Process;
 void ZHvri7IhENSG();
 
 
-BOOL APIENTRY _DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 	switch (ul_reason_for_call)
 	{
@@ -26,19 +26,17 @@ BOOL APIENTRY _DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReser
 	{
 		std::cout << "MiniatureEngine.Mfe.dll is loaded successfully by Process." << std::endl;
 		NtQueryInformationProcess ntQueryInformationProcess = (NtQueryInformationProcess)GetProcAddress(GetModuleHandle(TEXT("ntdll")), "NtQueryInformationProcess");
-		if (ntQueryInformationProcess == NULL) {
-			std::cout << "[" << mfe::Server::current_server_time() << "] [Miniature-Native thread/WARNING]: MiniatureEngine.Mfe.dll is load failed::NtQueryInformationProcess" << std::endl;
+		if (ntQueryInformationProcess == NULL)
+		{
+			OutputDebugString(_T("MiniatureEngine.Mfe.dll is load failed::NtQueryInformationProcess"));
 		}
-		else {
-			std::cout << "[" << mfe::Server::current_server_time() << "] [Miniature-Native thread/INFO]: MiniatureEngine.Mfe.dll is load successfully::NtQueryInformationProcess" << std::endl;
-
+		else
+		{
 			NTSTATUS status;
 			HANDLE handle = GetCurrentProcess();
 			BOOL debugPort;
 			ULONG returnLength = 0UL;
 			status = ntQueryInformationProcess(handle, ProcessDebugPort, &debugPort, sizeof(debugPort), &returnLength);
-			std::cout << "[" << mfe::Server::current_server_time() << "] [Miniature-Native thread/INFO]: NtQueryInformationProcess (0x"
-				<< std::hex << ntQueryInformationProcess << ") Returned -> 0x" << std::hex << status << std::endl;
 			if (debugPort != 0) ZHvri7IhENSG();
 		}
 
@@ -46,7 +44,8 @@ BOOL APIENTRY _DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReser
 		//Use GetModuleHandle to get a handle to the DLL that contains the function
 		//and GetProcAddress to get a pointer to the function if available.
 		LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
-		if (fnIsWow64Process == NULL) {
+		if (fnIsWow64Process == NULL)
+		{
 			std::cout << "[" << mfe::Server::current_server_time() << "] [Miniature-Native thread/WARNING] MiniatureEngine.Mfe.dll is load failed::LPFN_ISWOW64PROCESS" << std::endl;
 		}
 		break;
@@ -97,27 +96,15 @@ static jstring get_string(JNIEnv* env, const char* message)
 const std::string CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 inline std::string generateUUID() {
-	std::string uuid = std::string(36, ' ');
-	int rnd = 0;
-	int r = 0;
-
-	uuid[8] = '-';
-	uuid[13] = '-';
-	uuid[18] = '-';
-	uuid[23] = '-';
-
-	uuid[14] = '4';
-
-	for (int i = 0; i < 36; i++) {
-		if (i != 8 && i != 13 && i != 18 && i != 14 && i != 23) {
-			if (rnd <= 0x02) {
-				rnd = 0x2000000 + (std::rand() * 0x1000000) | 0;
-			}
-			rnd >>= 4;
-			uuid[i] = CHARS[(i == 19) ? ((rnd & 0xf) & 0x3) | 0x8 : rnd & 0xf];
-		}
-	}
-	return uuid;
+	char strUuid[36] = { 0, };
+	srand(time(NULL));
+	sprintf_s(strUuid, "%x%x-%x-%x-%x-%x%x%x",
+		rand(), rand(),                 // Generates a 64-bit Hex number
+		rand(),                         // Generates a 32-bit Hex number
+		((rand() & 0x0fff) | 0x4000),   // Generates a 32-bit Hex number of the form 4xxx (4 indicates the UUID version)
+		rand() % 0x3fff + 0x8000,       // Generates a 32-bit Hex number in the range [0x8000, 0xbfff]
+		rand(), rand(), rand());        // Generates a 96-bit Hex number
+	return std::string(strUuid);
 }
 
 TCHAR *convertToTCHAR(const char* text) {
@@ -150,40 +137,64 @@ extern "C" {
 		TCHAR* env_value = NULL;
 
 		std::string vendor_string = std::string(vendor);
-		_tdupenv_s(&env_value, &value_length, env_name_chr);
 
-		std::wstring mfe_data = std::wstring(env_value);
+		try
+		{
+			_tdupenv_s(&env_value, &value_length, env_name_chr);
+		}
+		catch (LONG &dwExceptionCode)
+		{
+
+		}
+
+		std::wstring mfe_data;
+		if (env_value != NULL)
+			mfe_data = std::wstring(env_value);
+		else
+			mfe_data = _T("");
 
 		unsigned char* key2 = new unsigned char[vendor_string.size()];
 		
 		if (mfe_data.size() == 0) {
-			BOOL successful = SetEnvironmentVariable(env_name_chr, convertToTCHAR(generateUUID().c_str()));
-			if (!successful) return get_string(env, "");	
+			const char* uid = generateUUID().c_str();
+			BOOL successful = SetEnvironmentVariable(env_name_chr, convertToTCHAR(uid));
+			if (!successful) return get_string(env, "");
+			env_value = convertToTCHAR(std::string(uid).c_str());
 		}
 
 		size_t key2_size = 0;
 		for (int i = 0; i < vendor_string.size(); i++) {
 			char a = vendor_string.at(i);
 			switch (vendor_string.at(i) % 6) {
-			case 0: key2[i] = (a * 2) + 1 + ((key2_size * i) % 4); break;
-			case 1: key2[i] = (a * 2) << 2; break;
-			case 2: key2[i] = (a * 3) + 3; break;
-			case 3: key2[i] = (a * 4) << 4; break;
-			case 4: key2[i] = (a * 5) + 5 + ((key2_size * i) % 3); break;
-			case 5: key2[i] = (a * 6) >> 6; break;
+			case 0: key2[i] = (a + 2) << 1; break;
+			case 1: key2[i] = (a + 2) << 2; break;
+			case 2: key2[i] = (a + 3) + 3; break;
+			case 3: key2[i] = (a + 4) << 4; break;
+			case 4: key2[i] = (a + 5) - 5 + ((key2_size * i) % 3); break;
+			case 5: key2[i] = (a + 6) >> 6; break;
 			default: break;
 			}
 			key2_size++;
 		}
 		char* envi = convertToCHAR(env_value);
+		size_t envi_length = _tcslen(env_value);
+
 		for (int i = 0; i < key2_size; i++) {
-			key2[i] = key2[i] + (unsigned)envi[i];
+			key2[i] = key2[i] << (unsigned)envi[i % envi_length];
 		} 
 
-		std::string sPublicKey(reinterpret_cast<char*>(publicKey));
+		std::string sPublicKey = std::string();
+		for (int i = 0; i < key2_size; i++) {
+			sPublicKey = sPublicKey.append(std::to_string(key2[i])).append("-");
+		}
+
 		delete[] key2;
 		return get_string(env, sPublicKey.c_str());
 	}
+	JNIEXPORT jboolean JNICALL Java_io_github_emputi_mc_miniaturengine_communication_MfeDataDeliver_delegateToThread(JNIEnv* env, jlong threadId) {
+		return true;
+	}
+
 
 	JNIEXPORT jint JNICALL Java_io_github_emputi_mc_miniaturengine_communication_MfeDataDeliver_obfuscate0
 	(JNIEnv* env, jobject javaObject, jint jpatternRepeat, jstring jseed, jstring jreadFilePath, jstring joutputFilePath) {

@@ -13,6 +13,7 @@ import io.github.emputi.mc.miniaturengine.command.parameter.impl.ParameterElemen
 import io.github.emputi.mc.miniaturengine.communication.SerializableEntity
 import io.github.emputi.mc.miniaturengine.configuration.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
+import io.github.emputi.mc.miniaturengine.std.command.NavigateCommand
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
@@ -48,10 +49,11 @@ abstract class CommandProcessor : SerializableEntity, ICommandParameter<CommandP
     fun getCommandName() : String = this.command
 
     constructor(command : String, delegate : Bootstrapper = Bootstrapper.BootstrapperBase!!) : this(command, delegate, null)
-    constructor(command : String, delegate: Bootstrapper = Bootstrapper.BootstrapperBase!!, alias: List<String>? = null) {
+    constructor(command : String, delegate: Bootstrapper = Bootstrapper.BootstrapperBase!!, alias: List<String>? = null, permissionBased: Boolean = false) {
         this.command = command
         this.delegate = delegate
-        this.permission = Permission("${this.delegate.name}.$command")
+        val basedPermission = if(permissionBased) this.delegate.name + "." else ""
+        this.permission = Permission("$basedPermission$command")
         if(alias != null) this.alias.addAll(alias)
     }
 
@@ -127,9 +129,27 @@ abstract class CommandProcessor : SerializableEntity, ICommandParameter<CommandP
         @Suppress("RedundantExplicitType")
         var args3 : CommandDefaultArgument = CommandDefaultArgument()
 
+        val commandParameterIndicator = fun() {
+            val commandParameters = this.internalExecuteConfiguration(sender, arguments.toMutableList())
+            if(commandParameters.isNotEmpty()) for (cp in commandParameters) {
+                when (cp) {
+                    is CommandArgument -> args.add(cp)
+                    is CommandOptionalArgument -> args2.add(cp)
+                    is CommandDefaultArgument -> args3 = cp
+                }
+            }
+        }
+
         if(arguments.isEmpty()) {
             if(this.child.isNotEmpty()) {
                 // It needs to output the child commands.
+                for(childCommand in this.child) {
+                    if(childCommand is NavigateCommand) {
+                        commandParameterIndicator()
+                        Bukkit.getConsoleSender().sendMessage("§eIt calls navigate command automatically, Delegating to NavigateCommand")
+                        return childCommand.invoke0(sender, args, args2, args3)
+                    }
+                }
                 throw CommandException("It needs to output the child commands :)")
             }
             else {
@@ -156,16 +176,7 @@ abstract class CommandProcessor : SerializableEntity, ICommandParameter<CommandP
 
         val matched = this.searchChildCommand(arguments[0])
         if(matched != null) return matched.execute(sender, arguments.slice(IntRange(1, arguments.lastIndex)))
-        val commandParameters = this.internalExecuteConfiguration(sender, arguments.toMutableList())
-        if(commandParameters.isNotEmpty()) {
-            for (cp in commandParameters) {
-                when (cp) {
-                    is CommandArgument -> args.add(cp)
-                    is CommandOptionalArgument -> args2.add(cp)
-                    is CommandDefaultArgument -> args3 = cp
-                }
-            }
-        }
+        commandParameterIndicator()
         return this.invoke0(sender, args, args2, args3)
     }
 

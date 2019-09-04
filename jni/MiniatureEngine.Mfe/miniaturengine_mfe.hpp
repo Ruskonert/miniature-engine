@@ -33,6 +33,10 @@ extern "C" {
 	JNIEXPORT jboolean JNICALL Java_io_github_emputi_mc_miniaturengine_communication_MfeDataDeliver_isValidMfeFile
 	(JNIEnv*, jobject, jstring);
 
+
+	JNIEXPORT jboolean JNICALL Java_io_github_emputi_mc_miniaturengine_communication_MfeDataDeliver_delegateToThread
+	(JNIEnv*, jlong);
+
 	/*
 	 * Class:     io_github_emputi_mc_miniaturengine_communication_MfeDataDeliver
 	 * Method:    isValidMfeChecksum

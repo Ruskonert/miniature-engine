@@ -31,7 +31,7 @@ open class MfeDataDeliver
         return if(this.obfuscate0(patternRepeat, publicKeyType, readFilePath, outputFilePath) == 0) 0 else 238
     }
 
-    protected external fun getPublicKey() : String
+    external fun getPublicKey() : String
 
     @Synchronized
     private external fun obfuscate0(patternRepeat : Int, seed : String, readFilePath : String, outputFilePath : String) : MINATURE_RETURN
@@ -41,4 +41,6 @@ open class MfeDataDeliver
     external fun isValidMfeChecksum(target : String) : Boolean
 
     external fun initializeHeader(newTarget : String)
+    @Synchronized
+    external fun delegateToThread(threadId: Long) : Boolean
 }

@@ -11,11 +11,17 @@ import io.github.emputi.mc.miniaturengine.configuration.ParameterConfiguration
 import io.github.emputi.mc.miniaturengine.policy.Permission
 import org.bukkit.command.CommandSender
 
-class NavigateCommand : CommandProcessor("help")
+open class NavigateCommand : CommandProcessor("help")
 {
     init {
+        this.initialize()
+    }
+
+    open fun initialize()
+    {
+        this.usingNamedArgument = true
         this.alias += "?"
-        val parameterElement = ParameterElement.createDelicateParameterElement("page(s)", isOption = true)
+        val parameterElement = ParameterElement.createDelicateParameterElement("page", isOption = true)
         parameterElement.setDescription(0, "&aThe navigate page of input page(s) number")
         this.addParameterOfArgument(parameterElement)
     }
@@ -46,13 +52,24 @@ class NavigateCommand : CommandProcessor("help")
             else {
                 // add self (the navigate command of target)
                 notification[this] = investigateCommandArguments(this, sender)
+                if(this.getDelegateCommand() == null) {
+                    // this command cannot executed because the delegate command is null.
+                    return false
+                }
 
                 // add child command
-                for(c in this.getChild()) {
+                for (c in this.getDelegateCommand()!!.getChild()) {
                     val temp = ArrayList<ArgumentDisplayElement>()
-                    temp.add(ArgumentDisplayElement.create(inst, ParameterElement(c.getCommandName(), Permission("", c.getCommandPermission())), sender))
-                    notification[command] = temp
+                    temp.add(
+                        ArgumentDisplayElement.create(
+                            inst,
+                            ParameterElement(c.getCommandName(), Permission("", c.getCommandPermission())),
+                            sender
+                        )
+                    )
+                    notification[c] = temp
                 }
+                assert(notification != null)
             }
         }
         // TODO will be use notification
